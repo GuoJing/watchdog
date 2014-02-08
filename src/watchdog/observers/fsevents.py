@@ -86,9 +86,15 @@ class FSEventsEmitter(EventEmitter):
             events = new_snapshot - self.snapshot
             self.snapshot = new_snapshot
 
+            # Hack for Replace in Mac OS
+            # if file in files created and deleted
+            # then we think is a replace
+            created_files = [src_path for src_path in events.files_created]
+
             # Files.
             for src_path in events.files_deleted:
-                self.queue_event(FileDeletedEvent(src_path))
+                if not src_path in created_files:
+                    self.queue_event(FileDeletedEvent(src_path))
             for src_path in events.files_modified:
                 self.queue_event(FileModifiedEvent(src_path))
             for src_path in events.files_created:
@@ -96,9 +102,12 @@ class FSEventsEmitter(EventEmitter):
             for src_path, dest_path in events.files_moved:
                 self.queue_event(FileMovedEvent(src_path, dest_path))
 
+            created_dirs = [src_path for src_path in events.dirs_created]
+
             # Directories.
             for src_path in events.dirs_deleted:
-                self.queue_event(DirDeletedEvent(src_path))
+                if not src_path in created_dirs:
+                    self.queue_event(DirDeletedEvent(src_path))
             for src_path in events.dirs_modified:
                 self.queue_event(DirModifiedEvent(src_path))
             for src_path in events.dirs_created:
